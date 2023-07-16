@@ -1,3 +1,4 @@
+import {Num} from './num'
 import {Str} from './str'
 
 export function time() {
@@ -48,3 +49,4 @@ export function registerGlobalPropertyFactory(Class, propertyName, getter) {
 }
 
 export const str = new Str()
+export const num = new Num()

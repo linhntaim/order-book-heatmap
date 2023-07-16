@@ -1,4 +1,4 @@
-# vue-3-starter
+# order-book-heatmap
 
 ## Project setup
 ```

@@ -5,12 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <title><%= VUE_APP_NAME %></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="<%= BASE_URL %>vendors/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%= BASE_URL %>vendors/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;700&display=swap">
+    <style>
+        body {
+            font-family: 'Source Sans Pro', Roboto, system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';;
+        }
+    </style>
 </head>
 <body>
 <noscript>
     <strong>We're sorry but <%= VUE_APP_NAME %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
 </noscript>
 <div id="app"></div>
+<script src="<%= BASE_URL %>vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <!-- built files will be auto injected -->
 </body>
 </html>

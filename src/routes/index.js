@@ -34,6 +34,11 @@ export const routes = [
             },
             //
             {
+                path: ':exchange/:symbol/:interval',
+                name: 'heatmap',
+                component: () => import(/* webpackChunkName: "view-about" */ '@/resources/views/pages/Heatmap'),
+            },
+            {
                 path: 'about',
                 name: 'about',
                 component: () => import(/* webpackChunkName: "view-about" */ '@/resources/views/pages/About'),

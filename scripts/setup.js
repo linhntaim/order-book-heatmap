@@ -7,6 +7,8 @@ if (!fs.existsSync('./.env')) {
 const publicVendorPath = './public/vendors'
 const vendors = {
     './node_modules/bootstrap/dist': `${publicVendorPath}/bootstrap/dist`,
+    './node_modules/@fortawesome/fontawesome-free/css': `${publicVendorPath}/fontawesome-free/css`,
+    './node_modules/@fortawesome/fontawesome-free/webfonts': `${publicVendorPath}/fontawesome-free/webfonts`,
 }
 Object.keys(vendors).forEach(source => {
     if (!fs.existsSync(source)) {

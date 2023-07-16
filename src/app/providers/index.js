@@ -10,6 +10,7 @@ import {store} from './store'
 import {router} from './router'
 import {url} from './url'
 import {bus} from './bus'
+import {scrollbar} from './scrollbar'
 
 // Should be maintained in order
 export const providers = {
@@ -26,4 +27,5 @@ export const providers = {
     router,
     url,
     bus,
+    scrollbar,
 }
