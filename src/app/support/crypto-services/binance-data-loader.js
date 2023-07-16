@@ -90,7 +90,7 @@ export class BinanceDataLoader extends DataLoader
             .get('https://api.binance.com/api/v3/depth', {
                 params: {
                     symbol: this.symbol,
-                    limit: 500,
+                    limit: 1000,
                 },
             })
             .then(res => ({
@@ -118,13 +118,16 @@ export class BinanceDataLoader extends DataLoader
                     }
                     const open = Number(heatPrice)
                     const close = Number((Number(heatPrice) + this.info.heatSize).toFixed(num.precision(this.info.tickSize)))
-                    candles[heatPrice] = [{
-                        time: this.info.latestCandle.time,
-                        open: open,
-                        high: close,
-                        low: open,
-                        close: close,
-                    }]
+                    candles[heatPrice] = {
+                        fiat: Number(fiatOrders[heatPrice].toFixed(2)),
+                        data: [{
+                            time: this.info.latestCandle.time,
+                            open: open,
+                            high: close,
+                            low: open,
+                            close: close,
+                        }],
+                    }
                 })
                 return candles
             }

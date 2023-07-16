@@ -118,48 +118,48 @@ export default {
                         priceLineVisible: false,
                         lastValueVisible: false,
                     })
-                    series.setData(candles.map(candle => {
+                    series.setData(candles.data.map(candle => {
                         const colors = {
                             bids: [
-                                'rgba(0, 76, 153, .75)', // 300k
-                                'rgba(0, 102, 204, .75)', // 500k
-                                'rgba(0, 128, 255, .75)', // 1m
-                                'rgba(51, 153, 255, .75)', // 2m
-                                'rgba(0, 204, 204, .75)', // 3m
-                                'rgba(0, 255, 255, .75)', // 5m
-                                'rgba(51, 255, 255, .75)', // 10m
-                                'rgba(102, 255, 255, .75)', // 20m
-                                'rgba(204, 255, 255, .75)', // 30m
+                                'rgba(0, 76, 153, .65)', // 300k
+                                'rgba(0, 102, 204, .65)', // 500k
+                                'rgba(0, 128, 255, .65)', // 1m
+                                'rgba(51, 153, 255, .65)', // 2m
+                                'rgba(0, 204, 204, .65)', // 3m
+                                'rgba(0, 255, 255, .65)', // 5m
+                                'rgba(51, 255, 255, .65)', // 10m
+                                'rgba(102, 255, 255, .65)', // 20m
+                                'rgba(204, 255, 255, .65)', // 30m
                             ],
                             asks: [
-                                'rgba(153, 76, 0, .75)', // 300k
-                                'rgba(204, 102, 0, .75)', // 500k
-                                'rgba(255, 128, 0, .75)', // 1m
-                                'rgba(255, 153, 51, .75)', // 2m
-                                'rgba(204, 204,0,  .75)', // 3m
-                                'rgba(255, 255,0,  .75)', // 5m
-                                'rgba(255, 255,51,  .75)', // 10m
-                                'rgba(255, 255,102,  .75)', // 20m
-                                'rgba(255, 255,204,  .75)', // 30m
+                                'rgba(153, 76, 0, .65)', // 300k
+                                'rgba(204, 102, 0, .65)', // 500k
+                                'rgba(255, 128, 0, .65)', // 1m
+                                'rgba(255, 153, 51, .65)', // 2m
+                                'rgba(204, 204, 0, .65)', // 3m
+                                'rgba(255, 255, 0, .65)', // 5m
+                                'rgba(255, 255, 51, .65)', // 10m
+                                'rgba(255, 255, 102, .65)', // 20m
+                                'rgba(255, 255, 204, .65)', // 30m
                             ],
                         }
                         const color = colors[side][(() => {
                             switch (true) {
-                                case candle.close < 500000:
+                                case candles.fiat < 500000:
                                     return 0
-                                case candle.close < 1000000:
+                                case candles.fiat >= 500000 && candles.fiat < 1000000:
                                     return 1
-                                case candle.close < 2000000:
+                                case candles.fiat >= 1000000 && candles.fiat < 2000000:
                                     return 2
-                                case candle.close < 3000000:
+                                case candles.fiat >= 2000000 && candles.fiat < 3000000:
                                     return 3
-                                case candle.close < 5000000:
+                                case candles.fiat >= 3000000 && candles.fiat < 5000000:
                                     return 4
-                                case candle.close < 10000000:
+                                case candles.fiat >= 5000000 && candles.fiat < 10000000:
                                     return 5
-                                case candle.close < 20000000:
+                                case candles.fiat >= 10000000 && candles.fiat < 20000000:
                                     return 6
-                                case candle.close < 30000000:
+                                case candles.fiat >= 20000000 && candles.fiat < 30000000:
                                     return 7
                                 default:
                                     return 8
