@@ -1,13 +1,27 @@
 <template lang="pug">
-.vw-100.vh-100.chart-container(ref="chartContainer")
+.wrapper.vw-100.vh-100
+    .chart-container(ref="chartContainer")
+    .order-book.small
+        .order-book-list.order-book-ask
+            .order-book-row.d-flex(v-for="(amount, price) in orderBook.asks")
+                .order-book-col.text-danger
+                    | {{ price }}
+                .order-book-col
+                    | {{ amount.toFixed(4) }}
+        .order-book-list.order-book-bid
+            .order-book-row.d-flex(v-for="(amount, price) in orderBook.bids")
+                .order-book-col.text-success
+                    | {{ price }}
+                .order-book-col
+                    | {{ amount.toFixed(4) }}
 </template>
 
 <script>
 import {createChart, CrosshairMode} from 'lightweight-charts'
-import {BinanceDataLoader} from '@/app/support/crypto-services'
-import {num} from '@/app/support/helpers'
+import {num, obj} from '@/app/support/helpers'
+import {BinanceDataHub} from '@/app/support/crypto-services'
 
-let chart, priceSeries, dataLoader, collectionOfHeatSeries = []
+let chart, priceSeries, dataHub, collectionOfHeatSeries = []
 
 export default {
     // eslint-disable-next-line
@@ -18,9 +32,18 @@ export default {
             exchange: this.$route.params.exchange,
             symbol: this.$route.params.symbol,
             interval: this.$route.params.interval,
+
+            orderBook: {
+                asks: {},
+                bids: {},
+            },
         }
     },
     mounted() {
+        if (!this.symbol.endsWith('USDT')) {
+            this.$router.push({name: 'not_found'})
+            return
+        }
         this.construct()
     },
     unmounted() {
@@ -28,35 +51,35 @@ export default {
     },
     methods: {
         async construct() {
-            await this.createDataLoader()
+            await this.createDataHub()
             this.createChart()
             await this.createPriceSeries()
             await this.createCollectionOfHeatSeries()
         },
         destruct() {
-            this.removeDataLoader()
+            this.removeDataHub()
             this.removeCollectionOfHeatSeries()
             this.removePriceSeries()
             this.removeChart()
         },
-        async createDataLoader() {
-            const loader = (() => {
+        async createDataHub() {
+            const hub = (() => {
                 switch (this.exchange) {
                     case 'binance':
                     default:
-                        return new BinanceDataLoader(this.symbol, this.interval)
+                        return new BinanceDataHub(this.symbol, this.interval)
                 }
             })()
 
-            await loader.init()
+            await hub.init()
 
-            dataLoader = loader
+            dataHub = hub
         },
-        removeDataLoader() {
-            if (dataLoader) {
-                dataLoader.endCandleStream()
-                dataLoader.endHeatBookStream()
-                dataLoader = null
+        removeDataHub() {
+            if (dataHub) {
+                dataHub.endCandleStream()
+                dataHub.endHeatStream()
+                dataHub = null
             }
         },
         createChart() {
@@ -95,13 +118,15 @@ export default {
         async createPriceSeries() {
             priceSeries = chart.addCandlestickSeries({
                 priceFormat: {
-                    precision: num.precision(dataLoader.info.tickSize),
-                    minMove: dataLoader.info.tickSize,
+                    precision: num.precision(dataHub.info.tickSize),
+                    minMove: dataHub.info.tickSize,
                 },
             })
-            priceSeries.setData(await dataLoader.fetchCandles())
 
-            dataLoader.startCandleStream(data => priceSeries.update(data))
+            await dataHub.startCandleStream(
+                candles => priceSeries.setData(candles),
+                candle => priceSeries.update(candle),
+            )
         },
         removePriceSeries() {
             if (priceSeries) {
@@ -110,76 +135,40 @@ export default {
             }
         },
         async createCollectionOfHeatSeries() {
-            await dataLoader.startHeatBookStream(collectionOfHeatCandles => {
-                this.removeCollectionOfHeatSeries()
+            await dataHub.startHeatStream(
+                bookOfHeatTradeCandles => {
+                    console.log(bookOfHeatTradeCandles)
+                },
+                (orderBook, bookOfHeatOrderCandles) => {
+                    this.removeCollectionOfHeatSeries()
 
-                const createSeries = (candles, side = 'bids') => {
-                    const series = chart.addCandlestickSeries({
-                        priceLineVisible: false,
-                        lastValueVisible: false,
-                    })
-                    series.setData(candles.data.map(candle => {
-                        const colors = {
-                            bids: [
-                                'rgba(0, 76, 153, .65)', // 300k
-                                'rgba(0, 102, 204, .65)', // 500k
-                                'rgba(0, 128, 255, .65)', // 1m
-                                'rgba(51, 153, 255, .65)', // 2m
-                                'rgba(0, 204, 204, .65)', // 3m
-                                'rgba(0, 255, 255, .65)', // 5m
-                                'rgba(51, 255, 255, .65)', // 10m
-                                'rgba(102, 255, 255, .65)', // 20m
-                                'rgba(204, 255, 255, .65)', // 30m
-                            ],
-                            asks: [
-                                'rgba(153, 76, 0, .65)', // 300k
-                                'rgba(204, 102, 0, .65)', // 500k
-                                'rgba(255, 128, 0, .65)', // 1m
-                                'rgba(255, 153, 51, .65)', // 2m
-                                'rgba(204, 204, 0, .65)', // 3m
-                                'rgba(255, 255, 0, .65)', // 5m
-                                'rgba(255, 255, 51, .65)', // 10m
-                                'rgba(255, 255, 102, .65)', // 20m
-                                'rgba(255, 255, 204, .65)', // 30m
-                            ],
-                        }
-                        const color = colors[side][(() => {
-                            switch (true) {
-                                case candles.fiat < 500000:
-                                    return 0
-                                case candles.fiat >= 500000 && candles.fiat < 1000000:
-                                    return 1
-                                case candles.fiat >= 1000000 && candles.fiat < 2000000:
-                                    return 2
-                                case candles.fiat >= 2000000 && candles.fiat < 3000000:
-                                    return 3
-                                case candles.fiat >= 3000000 && candles.fiat < 5000000:
-                                    return 4
-                                case candles.fiat >= 5000000 && candles.fiat < 10000000:
-                                    return 5
-                                case candles.fiat >= 10000000 && candles.fiat < 20000000:
-                                    return 6
-                                case candles.fiat >= 20000000 && candles.fiat < 30000000:
-                                    return 7
-                                default:
-                                    return 8
-                            }
-                        })()]
-                        candle.color = color
-                        candle.borderColor = color
-                        candle.wickColor = color
-                        return candle
-                    }))
-                    return series
-                }
+                    this.orderBook.asks = obj.sortByKey(orderBook.asks, 'asc', 'number')
+                    this.orderBook.bids = obj.sortByKey(orderBook.bids, 'desc', 'number')
 
-                const createCollectionOfSeries = (collectionOfCandles, side = 'bids') => {
-                    Object.keys(collectionOfCandles).forEach(key => collectionOfHeatSeries.push(createSeries(collectionOfCandles[key], side)))
-                }
+                    this.createBookOfHeatSeries(bookOfHeatOrderCandles)
+                },
+            )
+        },
+        createBookOfHeatSeries(bookOfHeatCandles) {
+            const createHeatSeries = heatCandles => {
+                const heatSeries = chart.addCandlestickSeries({
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                })
+                heatSeries.setData(heatCandles.candles)
+                heatSeries.setMarkers(heatCandles.markers)
+                return heatSeries
+            }
+            const createCollectionOfHeatSeries = (collectionOfHeatCandles) => {
+                Object.keys(collectionOfHeatCandles).forEach(
+                    heatPrice => collectionOfHeatSeries.push(
+                        createHeatSeries(collectionOfHeatCandles[heatPrice]),
+                    ),
+                )
+            }
 
-                createCollectionOfSeries(collectionOfHeatCandles.bids)
-                createCollectionOfSeries(collectionOfHeatCandles.asks, 'asks')
-            })
+            createCollectionOfHeatSeries(bookOfHeatCandles.asks)
+            createCollectionOfHeatSeries(bookOfHeatCandles.bids)
         },
         removeCollectionOfHeatSeries() {
             collectionOfHeatSeries.forEach(heatSeries => {
@@ -192,7 +181,54 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.wrapper {
+    position: relative;
+    background: rgb(22, 26, 30);
+}
+
 .chart-container {
-    background: rgb(65, 78, 112);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(100% - 320px);
+    height: 100%;
+}
+
+.order-book {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 320px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    color: #ffffff;
+}
+
+.order-book-list {
+    height: 50%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.order-book-ask {
+    flex-direction: column-reverse;
+}
+
+.order-book-bid {
+}
+
+.order-book-row {
+    padding: 0.125rem 1rem;
+}
+
+.order-book-col {
+    flex: 1 1 0;
+
+    &:not(:first-child) {
+        margin-left: 4px;
+        text-align: right;
+    }
 }
 </style>

@@ -30,7 +30,7 @@ export const routes = [
             {
                 path: '/',
                 name: 'root',
-                component: () => import(/* webpackChunkName: "view-home" */ '@/resources/views/pages/Home'),
+                redirect: '/binance/BTCUSDT/1h',
             },
             //
             {
