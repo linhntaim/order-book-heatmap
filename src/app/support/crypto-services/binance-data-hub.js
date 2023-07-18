@@ -233,8 +233,6 @@ export class BinanceDataHub extends DataHub
             updateSide('bids')
         }
 
-        const time = this.interval.findOpenTimeOf(null, 1)
-
         const makeBookOfHeatOrderCandles = () => {
             const calcHeatOrders = (orders, side = 'bids') => {
                 const heatOrders = {} // heatPrice => heatTotal
@@ -269,7 +267,7 @@ export class BinanceDataHub extends DataHub
                     const open = Number(heatPrice)
                     const close = Number((Number(heatPrice) + this.info.heatSize).toFixed(num.precision(this.info.tickSize)))
                     collectionOfHeatCandles[heatPrice].candles.push({
-                        time: time,
+                        time: this.info.nextIntervalTime,
                         open: open,
                         high: close,
                         low: open,
@@ -279,7 +277,7 @@ export class BinanceDataHub extends DataHub
                         wickColor: color,
                     })
                     collectionOfHeatCandles[heatPrice].markers.push({
-                        time: time,
+                        time: this.info.nextIntervalTime,
                         position: 'inBar',
                         color: 'rgba(255, 255, 255, 0.85)',
                         text: new Intl.NumberFormat('en-US', {

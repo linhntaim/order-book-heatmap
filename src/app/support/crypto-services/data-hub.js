@@ -8,6 +8,7 @@ export class DataHub
         this.info = {
             tickSize: 1,
             latestCandle: 0,
+            nextIntervalTime: 0,
             heatSize: 0,
         }
     }
@@ -18,6 +19,7 @@ export class DataHub
 
     updateLatestCandle(latestCandle) {
         this.info.latestCandle = latestCandle
+        this.info.nextIntervalTime = this.interval.findOpenTimeOf(null, 1)
         this.info.heatSize =
             (heatSize => (heatSize <= 1000 ? 10 : heatSize / 100) * this.info.tickSize)(Math.pow(10, Math.floor(Math.log10(this.info.latestCandle.close / this.info.tickSize))))
     }
