@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunk_linhntaim_order_book_heatmap"]=self["webpackChunk_linhntaim_order_book_heatmap"]||[]).push([[355],{8104:function(e,o,a){a.r(o),o["default"]={hello:"Xin chào {world}"}}}]);
+//# sourceMappingURL=lang-vi-js.dacf9946.js.map

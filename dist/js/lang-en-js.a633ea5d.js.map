@@ -1,0 +1,1 @@
+{"version":3,"file":"js/lang-en-js.a633ea5d.js","mappings":"gKAAA,cACIA,MAAO,gB","sources":["webpack://@linhntaim/order-book-heatmap/./src/lang/en.js"],"sourcesContent":["export default {\r\n    hello: 'Hello {world}',\r\n}\r\n"],"names":["hello"],"sourceRoot":""}

@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunk_linhntaim_order_book_heatmap"]=self["webpackChunk_linhntaim_order_book_heatmap"]||[]).push([[820],{8367:function(e,l,o){o.r(l),l["default"]={hello:"Hello {world}"}}}]);
+//# sourceMappingURL=lang-en-js.a633ea5d.js.map
