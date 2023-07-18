@@ -233,6 +233,8 @@ export class BinanceDataHub extends DataHub
             updateSide('bids')
         }
 
+        const time = this.interval.findOpenTimeOf(null, 1)
+
         const makeBookOfHeatOrderCandles = () => {
             const calcHeatOrders = (orders, side = 'bids') => {
                 const heatOrders = {} // heatPrice => heatTotal
@@ -249,8 +251,6 @@ export class BinanceDataHub extends DataHub
                 })
                 return heatOrders
             }
-
-            const time = this.interval.findOpenTimeOf(this.info.latestCandle.time, 1) * 1000
 
             const makeCollectionOfHeatOrderCandles = (heatOrders, side = 'bids') => {
                 const collectionOfHeatCandles = {}
