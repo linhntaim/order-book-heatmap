@@ -106,6 +106,7 @@ export default {
                 timeScale: {
                     timeVisible: true,
                     borderColor: 'rgb(34, 38, 49)',
+                    rightOffset: 50,
                 },
             })
         },
@@ -124,7 +125,14 @@ export default {
             })
 
             await dataHub.startCandleStream(
-                candles => priceSeries.setData(candles),
+                candles => {
+                    priceSeries.setData(candles)
+                    chart.applyOptions({
+                        rightPriceScale: {
+                            autoScale: false,
+                        },
+                    })
+                },
                 candle => priceSeries.update(candle),
             )
         },
