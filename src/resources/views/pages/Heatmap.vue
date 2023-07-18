@@ -213,6 +213,16 @@ export default {
     color: #ffffff;
 }
 
+@media (max-width: 991px) {
+    .chart-container {
+        width: 100%;
+    }
+
+    .order-book {
+        display: none;
+    }
+}
+
 .order-book-list {
     height: 50%;
     display: flex;
