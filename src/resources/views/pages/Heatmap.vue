@@ -14,12 +14,21 @@
                     | {{ price }}
                 .order-book-col
                     | {{ amount.toFixed(4) }}
+#reloadModal.modal.fade(tabindex="-1" data-bs-backdrop="static")
+    .modal-dialog
+        .modal-content
+            .modal-body.text-center
+                | Welcome back.
+                br
+                br
+                | Page is being reload to fetch fresh data...
 </template>
 
 <script>
 import {createChart, CrosshairMode} from 'lightweight-charts'
 import {num, obj} from '@/app/support/helpers'
 import {BinanceDataHub} from '@/app/support/crypto-services'
+import formfactor from 'platform-detect/formfactor.mjs'
 
 let chart, priceSeries, dataHub, collectionOfHeatSeries = []
 
@@ -40,6 +49,8 @@ export default {
         }
     },
     mounted() {
+        this.$bus.on('pageVisible', this.reload)
+
         if (!this.symbol.endsWith('USDT')) {
             this.$router.push({name: 'not_found'})
             return
@@ -47,9 +58,20 @@ export default {
         this.construct()
     },
     unmounted() {
+        this.$bus.off('pageVisible', this.reload)
+
         this.destruct()
     },
     methods: {
+        reload() {
+            if (['phone', 'tablet'].includes(formfactor.formfactor)) {
+                const reloadModal = window.bootstrap.Modal.getOrCreateInstance('#reloadModal')
+                if (!reloadModal._isShown) {
+                    reloadModal._element.addEventListener('shown.bs.modal', () => setTimeout(() => window.location.reload(), 1000))
+                    reloadModal.show()
+                }
+            }
+        },
         async construct() {
             await this.createDataHub()
             this.createChart()
@@ -106,7 +128,7 @@ export default {
                 timeScale: {
                     timeVisible: true,
                     borderColor: 'rgb(34, 38, 49)',
-                    rightOffset: 50,
+                    rightOffset: 20,
                 },
             })
         },

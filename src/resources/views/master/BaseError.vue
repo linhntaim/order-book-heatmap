@@ -1,5 +1,5 @@
 <template lang="pug">
-.error
+.error.text-center.pt-5
     router-view
 </template>
 
