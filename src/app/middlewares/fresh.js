@@ -10,6 +10,9 @@ export class Fresh extends Middleware
             await this.restoreFromCache()
             await this.restoreFromCookie()
         }
+        else {
+            this.app.$timer.offAll()
+        }
         next()
     }
 
