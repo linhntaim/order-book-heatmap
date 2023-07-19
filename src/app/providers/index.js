@@ -10,6 +10,8 @@ import {store} from './store'
 import {router} from './router'
 import {url} from './url'
 import {bus} from './bus'
+import {pageVisibility} from './page-visibility'
+import {timer} from './timer'
 import {scrollbar} from './scrollbar'
 
 // Should be maintained in order
@@ -27,5 +29,7 @@ export const providers = {
     router,
     url,
     bus,
+    pageVisibility,
+    timer,
     scrollbar,
 }

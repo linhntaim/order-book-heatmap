@@ -10,11 +10,11 @@ export const routes = [
             middleware: middlewares,
         },
         children: [
-            {
-                path: 'clear-site-data',
-                name: 'clear_site_data',
-                component: () => import(/* webpackChunkName: "view-clear-site-data" */ '@/resources/views/pages/ClearSiteData'),
-            },
+            // {
+            //     path: 'clear-site-data',
+            //     name: 'clear_site_data',
+            //     component: () => import(/* webpackChunkName: "view-clear-site-data" */ '@/resources/views/pages/ClearSiteData'),
+            // },
             {
                 path: 'error',
                 component: BaseError,
@@ -38,11 +38,11 @@ export const routes = [
                 name: 'heatmap',
                 component: () => import(/* webpackChunkName: "view-about" */ '@/resources/views/pages/Heatmap'),
             },
-            {
-                path: 'about',
-                name: 'about',
-                component: () => import(/* webpackChunkName: "view-about" */ '@/resources/views/pages/About'),
-            },
+            // {
+            //     path: 'about',
+            //     name: 'about',
+            //     component: () => import(/* webpackChunkName: "view-about" */ '@/resources/views/pages/About'),
+            // },
             //
             {
                 path: ':pathMatch(.*)*',
