@@ -1,42 +1,126 @@
-import {Interval} from '@/app/support/crypto-services/interval'
+import {ApiHub} from './api-hub'
+import {Interval} from './interval'
+import {OrderBook} from './order-book'
+import {StreamHub} from './stream-hub'
+import {Ticker} from './ticker'
+import {HeatMaker} from '@/app/support/crypto-services/heat-maker'
 
 export class DataHub
 {
-    constructor(symbol = 'BTCUSDT', interval = '1d') {
-        this.symbol = symbol
-        this.interval = new Interval(interval)
-        this.info = {
-            tickSize: 1,
-            latestCandle: 0,
+    constructor(baseSymbol = 'BTC', quoteSymbol = 'USDT', interval = '1d') {
+        /**
+         *
+         * @type {Ticker}
+         */
+        this.ticker = this.createTicker(baseSymbol, quoteSymbol)
+        this.tickerSize = 0.01
+
+        /**
+         *
+         * @type {Interval}
+         */
+        this.interval = this.createInterval(interval)
+
+        this.latestCandle = {
+            candle: null,
             nextIntervalTime: 0,
             heatSize: 0,
         }
+
+        /**
+         *
+         * @type {ApiHub}
+         */
+        this.apiHub = this.createApiHub()
+
+        /**
+         *
+         * @type {StreamHub}
+         */
+        this.streamHub = this.createStreamHub()
+
+        this.heatMaker = new HeatMaker()
+    }
+
+    createTicker(baseSymbol, quoteSymbol) {
+        return new Ticker(baseSymbol, quoteSymbol)
+    }
+
+    createInterval(interval) {
+        return new Interval(interval)
+    }
+
+    createApiHub() {
+        return new ApiHub(this.ticker, this.interval)
+    }
+
+    createStreamHub() {
+        return new StreamHub(this.ticker, this.interval)
+    }
+
+    getStartingInfo() {
+        return this.apiHub.info()
+    }
+
+    getStartingCandles() {
+        return this.apiHub.candles()
+    }
+
+    getStartingOrderBook() {
+        return this.apiHub.orderBook()
+    }
+
+    initializeStartingOrderBook() {
+        return new OrderBook(this.tickerSize)
+    }
+
+    createOrderBook(orderBook) {
+        return new OrderBook(this.tickerSize, orderBook.asks, orderBook.bids)
     }
 
     async init() {
-        this.info.tickSize = await new Promise(resolve => resolve(1))
+        const info = await this.getStartingInfo()
+        this.tickerSize = info.ticker.size
+
+        this.heatMaker.setTickerSize(this.tickerSize)
     }
 
     updateLatestCandle(latestCandle) {
-        this.info.latestCandle = latestCandle
-        this.info.nextIntervalTime = this.interval.findOpenTimeOf(null, 1)
-        this.info.heatSize =
-            (heatSize => (heatSize <= 1000 ? 10 : heatSize / 100) * this.info.tickSize)(Math.pow(10, Math.floor(Math.log10(this.info.latestCandle.close / this.info.tickSize))))
+        this.latestCandle.candle = latestCandle
+        this.latestCandle.nextIntervalTime = this.interval.findOpenTimeOf(null, 1)
+        this.latestCandle.heatSize =
+            (heatSize => (heatSize <= 1000 ? 10 : heatSize / 100) * this.tickerSize)(Math.pow(10, Math.floor(Math.log10(latestCandle.close / this.tickerSize))))
+
+        this.heatMaker.setLatestCandle(this.latestCandle)
     }
 
-    // eslint-disable-next-line no-unused-vars
-    async startCandleStream(startCallback, streamCallback) {
+    async on(handleStartingCandles, handleStreamingCandle, handleStreamingOrderBook) {
+        const orderBook = this.initializeStartingOrderBook();
 
+        (await this.streamHub.connect()).listen(
+            updatingCandle => {
+                if (this.latestCandle.candle != null) { // starting candles fetched
+                    this.updateLatestCandle(updatingCandle)
+                    handleStreamingCandle(updatingCandle)
+                }
+            },
+            updatingOrderBook => {
+                handleStreamingOrderBook(
+                    this.heatMaker.makeHeatBook(
+                        orderBook.update(this.createOrderBook(updatingOrderBook)),
+                    ),
+                )
+            },
+        )
+
+        const startingCandles = await this.getStartingCandles()
+        this.updateLatestCandle(startingCandles[startingCandles.length - 1])
+        handleStartingCandles(startingCandles)
+
+        orderBook.replace(this.createOrderBook(await this.getStartingOrderBook()))
     }
 
-    endCandleStream() {
-
-    }
-
-    // eslint-disable-next-line no-unused-vars
-    async startHeatStream(startCallback, streamCallback) {
-    }
-
-    endHeatStream() {
+    off() {
+        this.streamHub.disconnect()
     }
 }

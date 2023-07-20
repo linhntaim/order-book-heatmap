@@ -1,1 +1,1 @@
-export * from './binance-data-hub'
+export * from './binance/data-hub'

@@ -67,6 +67,14 @@ export class Interval
         return asInt ? openTime.unix() : openTime
     }
 
+    useInApi() {
+        return this.toString()
+    }
+
+    useInStream() {
+        return this.toString()
+    }
+
     toString() {
         return this.interval
     }
