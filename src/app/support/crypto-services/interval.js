@@ -7,6 +7,15 @@ export class Interval
         this.interval = interval
         this.unit = substr(this.interval, -1)
         this.number = Number.parseInt(this.interval)
+        const maps = this.maps()
+        if (!(this.interval in maps)) {
+            throw `Interval ${this.interval} not supported`
+        }
+        this.mappedInterval = maps[this.interval]
+    }
+
+    maps() {
+        return {}
     }
 
     findOpenTimeOf(time = null, directionIndex = 0, asInt = true) {
@@ -18,6 +27,26 @@ export class Interval
                     return time
                 case moment.isDate(time):
                     return moment(time.getTime())
+                case Number.isInteger(time):
+                    /**
+                     * @see view-source:https://www.unixtimestamp.com/
+                     */
+                    if ((time >= 1E16) || (time <= -1E16)) {
+                        time = moment(Math.floor(time / 1000000))
+                    }
+                    else if ((time >= 1E14) || (time <= -1E14)) {
+                        time = Math.floor(time / 1000)
+                    }
+                    else if ((time >= 1E11) || (time <= -3E10)) {
+                        // eslint-disable-next-line no-empty
+                    }
+                    else {
+                        if ((time > 1E11) || (time < -1E10)) {
+                            // eslint-disable-next-line no-empty
+                        }
+                        time = time * 1000
+                    }
+                    return moment(Number.parseInt(time, 10))
                 default:
                     return moment(time)
             }
@@ -26,6 +55,10 @@ export class Interval
         const timestamp = m.unix() + 62135596800 // full timestamp from 01/01/0001 00:00:00
         const openTime = (() => {
             switch (this.unit) {
+                case 's':
+                    return m.subtract(timestamp % this.number, 's')
+                        .add(this.number * directionIndex, 's')
+                        .millisecond(0)
                 case 'm':
                     return m.subtract(Math.floor(timestamp / 60) % this.number, 'm')
                         .add(this.number * directionIndex, 'm')
@@ -67,7 +100,15 @@ export class Interval
         return asInt ? openTime.unix() : openTime
     }
 
+    useInApi() {
+        return this.toString()
+    }
+
+    useInStream() {
+        return this.toString()
+    }
+
     toString() {
-        return this.interval
+        return this.mappedInterval
     }
 }

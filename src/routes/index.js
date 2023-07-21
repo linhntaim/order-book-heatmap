@@ -30,11 +30,11 @@ export const routes = [
             {
                 path: '/',
                 name: 'root',
-                redirect: '/binance/BTCUSDT/1h',
+                redirect: '/binance/BTC/USDT/1h',
             },
             //
             {
-                path: ':exchange/:symbol/:interval',
+                path: ':exchange/:baseSymbol/:quoteSymbol/:interval',
                 name: 'heatmap',
                 component: () => import(/* webpackChunkName: "view-about" */ '@/resources/views/pages/Heatmap'),
             },

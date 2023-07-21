@@ -8,6 +8,11 @@ import {app} from '@/bootstrap/app'
 
 export default {
     name: 'NotFound',
+    head() {
+        return {
+            title: '404 - Not found',
+        }
+    },
     beforeRouteEnter() { // cannot access `this`
         app.$log.debug('page', 'not-found.beforeRouteEnter')
     },

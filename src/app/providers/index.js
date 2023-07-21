@@ -12,7 +12,12 @@ import {url} from './url'
 import {bus} from './bus'
 import {pageVisibility} from './page-visibility'
 import {timer} from './timer'
+import {head, headMixin} from './head'
 import {scrollbar} from './scrollbar'
+
+export const mixins = {
+    headMixin,
+}
 
 // Should be maintained in order
 export const providers = {
@@ -31,5 +36,6 @@ export const providers = {
     bus,
     pageVisibility,
     timer,
+    head,
     scrollbar,
 }
