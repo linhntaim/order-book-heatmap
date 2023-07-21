@@ -56,18 +56,26 @@ export class StreamHub extends BaseStreamHub
         }
 
         // l2update
+        // collect into chunk
+        const chunk = {
+            asks: [],
+            bids: [],
+        }
         const changes = data.changes
         while (changes.length) {
             const change = changes.shift()
             if (change.shift() === 'buy') {
-                this.queueOrderBook.bids.push(change)
+                chunk.bids.push(change)
             }
             else {
-                this.queueOrderBook.asks.push(change)
+                chunk.asks.push(change)
             }
         }
-
-        if (++this.queueOrderBook.counter === 100) {
+        // push chunk to queue
+        this.queueOrderBook.asks.push(chunk.asks)
+        this.queueOrderBook.bids.push(chunk.bids)
+        // return all chunks in queue after 1s
+        if (++this.queueOrderBook.counter === 20) { // 20 * 0.05s
             return take({
                 type: data.type,
                 asks: this.queueOrderBook.asks,
@@ -78,7 +86,6 @@ export class StreamHub extends BaseStreamHub
                 this.queueOrderBook.bids = []
             })
         }
-
         return {
             type: data.type,
             asks: [],
