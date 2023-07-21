@@ -36,6 +36,11 @@ export class HeatMaker
 
     setTickerSize(tickerSize) {
         this.tickerSize = tickerSize
+        this.usdFormatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            maximumFractionDigits: num.precision(this.tickerSize),
+        })
         return this
     }
 
@@ -114,11 +119,7 @@ export class HeatMaker
                 time: this.latestCandle.nextIntervalTime,
                 position: 'inBar',
                 color: 'rgba(255, 255, 255, 0.85)',
-                text: new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                    maximumFractionDigits: 2,
-                }).format(heatTotal) + ' ' + `(${heatOrders[heatPrice].quantity.toFixed(2)})`,
+                text: this.usdFormatter.format(heatTotal) + ' ' + `(${heatOrders[heatPrice].quantity.toFixed(2)})`,
             })
         })
         return heatSideCollection

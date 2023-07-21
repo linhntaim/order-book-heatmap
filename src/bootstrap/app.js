@@ -1,12 +1,14 @@
 import {createApp} from 'vue'
 import {createStart} from '@/app/support/start'
-import {providers} from '@/app/providers'
+import {mixins, providers} from '@/app/providers'
 import {modify, take, time} from '@/app/support/helpers'
 import App from '@/resources/views/App'
 
 export const vueStart = time()
 
 export const app = modify(createApp(App), vueApp => {
+    // register mixins
+    Object.keys(mixins).forEach(key => vueApp.mixin(mixins[key]))
     // register start plugin
     vueApp.use(createStart(vueStart))
     // register plugins

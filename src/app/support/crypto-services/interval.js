@@ -7,6 +7,15 @@ export class Interval
         this.interval = interval
         this.unit = substr(this.interval, -1)
         this.number = Number.parseInt(this.interval)
+        const maps = this.maps()
+        if (!(this.interval in maps)) {
+            throw `Interval ${this.interval} not supported`
+        }
+        this.mappedInterval = maps[this.interval]
+    }
+
+    maps() {
+        return {}
     }
 
     findOpenTimeOf(time = null, directionIndex = 0, asInt = true) {
@@ -26,6 +35,10 @@ export class Interval
         const timestamp = m.unix() + 62135596800 // full timestamp from 01/01/0001 00:00:00
         const openTime = (() => {
             switch (this.unit) {
+                case 's':
+                    return m.subtract(timestamp % this.number, 's')
+                        .add(this.number * directionIndex, 's')
+                        .millisecond(0)
                 case 'm':
                     return m.subtract(Math.floor(timestamp / 60) % this.number, 'm')
                         .add(this.number * directionIndex, 'm')
@@ -76,6 +89,6 @@ export class Interval
     }
 
     toString() {
-        return this.interval
+        return this.mappedInterval
     }
 }

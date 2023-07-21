@@ -23,6 +23,10 @@ export default {
     name: 'Chart',
     data() {
         return {
+            head: {
+                title: 'Heatmap',
+            },
+
             type: 'Candlestick',
             exchange: this.$route.params.exchange,
             baseSymbol: this.$route.params.baseSymbol.toUpperCase(),
@@ -33,6 +37,11 @@ export default {
                 asks: {},
                 bids: {},
             },
+        }
+    },
+    head() {
+        return {
+            title: this.head.title,
         }
     },
     mounted() {
@@ -116,8 +125,15 @@ export default {
             }
         },
         createSeries() {
+            const numFormatter = new Intl.NumberFormat('en-US', {
+                maximumFractionDigits: num.precision(dataHub.tickerSize),
+            })
+            const updateTitle = () => {
+                this.head.title = `${numFormatter.format(dataHub.latestCandle.candle.close)} ${this.baseSymbol}/${this.quoteSymbol}`
+            }
             dataHub.on(
                 startingCandles => {
+                    updateTitle()
                     priceSeries = chart.addCandlestickSeries({
                         priceFormat: {
                             precision: num.precision(dataHub.tickerSize),
@@ -132,6 +148,7 @@ export default {
                     })
                 },
                 updatingCandle => {
+                    updateTitle()
                     priceSeries.update(updatingCandle)
                 },
                 heatBook => {
