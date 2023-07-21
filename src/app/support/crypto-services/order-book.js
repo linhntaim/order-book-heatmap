@@ -33,10 +33,16 @@ export class OrderBook
         const aggregatedOrders = {} // price => quantity
         orders.forEach(order => {
             const price = Number(order[0]).toFixed(num.precision(this.tickerSize))
+            const quantity = Number(order[1])
             if (!(order[0] in aggregatedOrders)) {
                 aggregatedOrders[price] = 0
             }
-            aggregatedOrders[price] += Number(order[1])
+            if (quantity === 0) {
+                aggregatedOrders[price] = 0
+            }
+            else {
+                aggregatedOrders[price] += quantity
+            }
         })
         return aggregatedOrders
     }

@@ -67,7 +67,7 @@ export class StreamHub extends BaseStreamHub
             }
         }
 
-        if (++this.queueOrderBook.counter === 100) {
+        if (++this.queueOrderBook.counter === 20) { // 20 * 0.05s 
             return take({
                 type: data.type,
                 asks: this.queueOrderBook.asks,
