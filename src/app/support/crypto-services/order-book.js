@@ -4,9 +4,9 @@ export class OrderBook
 {
     /**
      *
-     * @param tickerSize
-     * @param asks
-     * @param bids
+     * @param {Number} tickerSize
+     * @param {Array} asks
+     * @param {Array} bids
      */
     constructor(tickerSize, asks = [], bids = []) {
         this.tickerSize = tickerSize
@@ -26,7 +26,7 @@ export class OrderBook
 
     /**
      *
-     * @param orders
+     * @param {Array} orders
      * @returns {{Number}}
      */
     aggregateByPrice(orders) {
@@ -37,7 +37,7 @@ export class OrderBook
             if (!(order[0] in aggregatedOrders)) {
                 aggregatedOrders[price] = 0
             }
-            if (quantity === 0) {
+            if (quantity === 0) { // just set 0, no delete
                 aggregatedOrders[price] = 0
             }
             else {
