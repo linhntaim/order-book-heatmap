@@ -1,5 +1,6 @@
 <template lang="pug">
-not-found
+.error.text-center.pt-5
+    not-found
 </template>
 
 <script>

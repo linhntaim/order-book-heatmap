@@ -1,19 +1,5 @@
 <template lang="pug">
-.wrapper.vw-100.vh-100
-    .chart-container(ref="chartContainer")
-    .order-book.small
-        .order-book-list.order-book-ask
-            .order-book-row.d-flex(v-for="(amount, price) in orderBook.asks")
-                .order-book-col.text-danger
-                    | {{ price }}
-                .order-book-col
-                    | {{ amount.toFixed(4) }}
-        .order-book-list.order-book-bid
-            .order-book-row.d-flex(v-for="(amount, price) in orderBook.bids")
-                .order-book-col.text-success
-                    | {{ price }}
-                .order-book-col
-                    | {{ amount.toFixed(4) }}
+.chart-container.vw-100.vh-100(ref="chartContainer")
 #reloadModal.modal.fade(tabindex="-1" data-bs-backdrop="static")
     .modal-dialog
         .modal-content
@@ -26,20 +12,25 @@
 
 <script>
 import {createChart, CrosshairMode} from 'lightweight-charts'
-import {num, obj} from '@/app/support/helpers'
-import {BinanceDataHub} from '@/app/support/crypto-services'
+import {num} from '@/app/support/helpers'
+import {DataHubFactory} from '@/app/support/crypto-services/data-hub-factory'
 import formfactor from 'platform-detect/formfactor.mjs'
 
-let chart, priceSeries, dataHub, collectionOfHeatSeries = []
+let chart, priceSeries, dataHub, heatBookSeries = []
 
 export default {
     // eslint-disable-next-line
     name: 'Chart',
     data() {
         return {
+            head: {
+                title: 'Heatmap',
+            },
+
             type: 'Candlestick',
             exchange: this.$route.params.exchange,
-            symbol: this.$route.params.symbol,
+            baseSymbol: this.$route.params.baseSymbol.toUpperCase(),
+            quoteSymbol: this.$route.params.quoteSymbol.toUpperCase(),
             interval: this.$route.params.interval,
 
             orderBook: {
@@ -48,13 +39,19 @@ export default {
             },
         }
     },
+    head() {
+        return {
+            title: this.head.title,
+        }
+    },
     mounted() {
-        this.$bus.on('pageVisible', this.reload)
-
-        if (!this.symbol.endsWith('USDT')) {
+        if (!['USDT', 'USD', 'BUSD', 'TUSD'].includes(this.quoteSymbol)) {
             this.$router.push({name: 'not_found'})
             return
         }
+
+        this.$bus.on('pageVisible', this.reload)
+
         this.construct()
     },
     unmounted() {
@@ -65,6 +62,8 @@ export default {
     methods: {
         reload() {
             if (['phone', 'tablet'].includes(formfactor.formfactor)) {
+                // On mobile devices, data streams will be disrupted while the page goes inactive.
+                // We need to reload page when users get back to make sure everything works normally.
                 const reloadModal = window.bootstrap.Modal.getOrCreateInstance('#reloadModal')
                 if (!reloadModal._isShown) {
                     reloadModal._element.addEventListener('shown.bs.modal', () => setTimeout(() => window.location.reload(), 1000))
@@ -75,32 +74,19 @@ export default {
         async construct() {
             await this.createDataHub()
             this.createChart()
-            await this.createPriceSeries()
-            await this.createCollectionOfHeatSeries()
+            await this.createSeries()
         },
         destruct() {
             this.removeDataHub()
-            this.removeCollectionOfHeatSeries()
-            this.removePriceSeries()
+            this.removeSeries()
             this.removeChart()
         },
         async createDataHub() {
-            const hub = (() => {
-                switch (this.exchange) {
-                    case 'binance':
-                    default:
-                        return new BinanceDataHub(this.symbol, this.interval)
-                }
-            })()
-
-            await hub.init()
-
-            dataHub = hub
+            dataHub = await DataHubFactory.create(this.exchange, this.baseSymbol, this.quoteSymbol, this.interval)
         },
         removeDataHub() {
             if (dataHub) {
-                dataHub.endCandleStream()
-                dataHub.endHeatStream()
+                dataHub.off()
                 dataHub = null
             }
         },
@@ -121,6 +107,7 @@ export default {
                 },
                 rightPriceScale: {
                     borderColor: 'rgb(34, 38, 49)',
+                    autoScale: true,
                 },
                 crosshair: {
                     mode: CrosshairMode.Normal,
@@ -138,137 +125,74 @@ export default {
                 chart = null
             }
         },
-        async createPriceSeries() {
-            priceSeries = chart.addCandlestickSeries({
-                priceFormat: {
-                    precision: num.precision(dataHub.info.tickSize),
-                    minMove: dataHub.info.tickSize,
-                },
+        createSeries() {
+            const numFormatter = new Intl.NumberFormat('en-US', {
+                maximumFractionDigits: num.precision(dataHub.tickerSize),
+                minimumFractionDigits: num.precision(dataHub.tickerSize),
             })
-
-            await dataHub.startCandleStream(
-                candles => {
-                    priceSeries.setData(candles)
+            const updateTitle = () => {
+                this.head.title = `${numFormatter.format(dataHub.latestCandle.candle.close)} ${this.baseSymbol}/${this.quoteSymbol}`
+            }
+            dataHub.on(
+                startingCandles => {
+                    updateTitle()
+                    priceSeries = chart.addCandlestickSeries({
+                        priceFormat: {
+                            precision: num.precision(dataHub.tickerSize),
+                            minMove: dataHub.tickerSize,
+                        },
+                    })
+                    priceSeries.setData(startingCandles)
                     chart.applyOptions({
                         rightPriceScale: {
                             autoScale: false,
                         },
                     })
                 },
-                candle => priceSeries.update(candle),
+                updatingCandle => {
+                    updateTitle()
+                    priceSeries.update(updatingCandle)
+                },
+                heatBook => {
+                    this.removeHeatBookSeries()
+                    this.createHeatSideSeries(heatBook.asks)
+                    this.createHeatSideSeries(heatBook.bids)
+                },
             )
         },
-        removePriceSeries() {
+        createHeatSideSeries(heatSideCollection) {
+            Object.keys(heatSideCollection).forEach(
+                heatPrice => {
+                    const heatSideItem = heatSideCollection[heatPrice]
+                    const heatSeries = chart.addCandlestickSeries({
+                        priceLineVisible: false,
+                        lastValueVisible: false,
+                    })
+                    heatSeries.setData(heatSideItem.candles)
+                    heatSeries.setMarkers(heatSideItem.markers)
+                    heatBookSeries.push(heatSeries)
+                },
+            )
+        },
+        removeHeatBookSeries() {
+            heatBookSeries.forEach(heatSeries => {
+                chart.removeSeries(heatSeries)
+            })
+            heatBookSeries = []
+        },
+        removeSeries() {
             if (priceSeries) {
                 chart.removeSeries(priceSeries)
                 priceSeries = null
             }
-        },
-        async createCollectionOfHeatSeries() {
-            await dataHub.startHeatStream(
-                bookOfHeatTradeCandles => {
-                    console.log(bookOfHeatTradeCandles)
-                },
-                (orderBook, bookOfHeatOrderCandles) => {
-                    this.removeCollectionOfHeatSeries()
-
-                    this.orderBook.asks = obj.sortByKey(orderBook.asks, 'asc', 'number')
-                    this.orderBook.bids = obj.sortByKey(orderBook.bids, 'desc', 'number')
-
-                    this.createBookOfHeatSeries(bookOfHeatOrderCandles)
-                },
-            )
-        },
-        createBookOfHeatSeries(bookOfHeatCandles) {
-            const createHeatSeries = heatCandles => {
-                const heatSeries = chart.addCandlestickSeries({
-                    priceLineVisible: false,
-                    lastValueVisible: false,
-                })
-                heatSeries.setData(heatCandles.candles)
-                heatSeries.setMarkers(heatCandles.markers)
-                return heatSeries
-            }
-            const createCollectionOfHeatSeries = (collectionOfHeatCandles) => {
-                Object.keys(collectionOfHeatCandles).forEach(
-                    heatPrice => collectionOfHeatSeries.push(
-                        createHeatSeries(collectionOfHeatCandles[heatPrice]),
-                    ),
-                )
-            }
-
-            createCollectionOfHeatSeries(bookOfHeatCandles.asks)
-            createCollectionOfHeatSeries(bookOfHeatCandles.bids)
-        },
-        removeCollectionOfHeatSeries() {
-            collectionOfHeatSeries.forEach(heatSeries => {
-                chart.removeSeries(heatSeries)
-            })
-            collectionOfHeatSeries = []
+            this.removeHeatBookSeries()
         },
     },
 }
 </script>
 
 <style lang="scss" scoped>
-.wrapper {
-    position: relative;
-    background: rgb(22, 26, 30);
-}
-
 .chart-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: calc(100% - 320px);
-    height: 100%;
-}
-
-.order-book {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 320px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    color: #ffffff;
-}
-
-@media (max-width: 991px) {
-    .chart-container {
-        width: 100%;
-    }
-
-    .order-book {
-        display: none;
-    }
-}
-
-.order-book-list {
-    height: 50%;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-}
-
-.order-book-ask {
-    flex-direction: column-reverse;
-}
-
-.order-book-bid {
-}
-
-.order-book-row {
-    padding: 0.125rem 1rem;
-}
-
-.order-book-col {
-    flex: 1 1 0;
-
-    &:not(:first-child) {
-        margin-left: 4px;
-        text-align: right;
-    }
+    background: rgb(22, 26, 30);
 }
 </style>
