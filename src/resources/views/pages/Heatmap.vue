@@ -45,7 +45,7 @@ export default {
         }
     },
     mounted() {
-        if (this.quoteSymbol !== 'USDT') {
+        if (!['USDT', 'USD', 'BUSD', 'TUSD'].includes(this.quoteSymbol)) {
             this.$router.push({name: 'not_found'})
             return
         }
@@ -107,6 +107,7 @@ export default {
                 },
                 rightPriceScale: {
                     borderColor: 'rgb(34, 38, 49)',
+                    autoScale: true,
                 },
                 crosshair: {
                     mode: CrosshairMode.Normal,
@@ -127,6 +128,7 @@ export default {
         createSeries() {
             const numFormatter = new Intl.NumberFormat('en-US', {
                 maximumFractionDigits: num.precision(dataHub.tickerSize),
+                minimumFractionDigits: num.precision(dataHub.tickerSize),
             })
             const updateTitle = () => {
                 this.head.title = `${numFormatter.format(dataHub.latestCandle.candle.close)} ${this.baseSymbol}/${this.quoteSymbol}`

@@ -1,4 +1,3 @@
-import {num} from '../../helpers'
 import {OrderBook as BaseOrderBook} from '../order-book'
 
 export class OrderBook extends BaseOrderBook
@@ -13,18 +12,6 @@ export class OrderBook extends BaseOrderBook
          * @type {OrderBook[]}
          */
         this.updatingQueue = []
-    }
-
-    aggregateByPrice(orders) {
-        const aggregatedOrders = {} // price => quantity
-        orders.forEach(order => {
-            const price = Number(order[0]).toFixed(num.precision(this.tickerSize))
-            if (!(order[0] in aggregatedOrders)) {
-                aggregatedOrders[price] = 0
-            }
-            aggregatedOrders[price] += Number(order[1])
-        })
-        return aggregatedOrders
     }
 
     replace(orderBook) {

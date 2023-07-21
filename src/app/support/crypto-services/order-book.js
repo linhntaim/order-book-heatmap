@@ -1,3 +1,5 @@
+import {num} from '@/app/support/helpers'
+
 export class OrderBook
 {
     /**
@@ -27,9 +29,16 @@ export class OrderBook
      * @param orders
      * @returns {{Number}}
      */
-    // eslint-disable-next-line no-unused-vars
     aggregateByPrice(orders) {
-        return {}
+        const aggregatedOrders = {} // price => quantity
+        orders.forEach(order => {
+            const price = Number(order[0]).toFixed(num.precision(this.tickerSize))
+            if (!(order[0] in aggregatedOrders)) {
+                aggregatedOrders[price] = 0
+            }
+            aggregatedOrders[price] += Number(order[1])
+        })
+        return aggregatedOrders
     }
 
     /**

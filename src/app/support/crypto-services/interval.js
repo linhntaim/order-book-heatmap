@@ -27,6 +27,26 @@ export class Interval
                     return time
                 case moment.isDate(time):
                     return moment(time.getTime())
+                case Number.isInteger(time):
+                    /**
+                     * @see view-source:https://www.unixtimestamp.com/
+                     */
+                    if ((time >= 1E16) || (time <= -1E16)) {
+                        time = moment(Math.floor(time / 1000000))
+                    }
+                    else if ((time >= 1E14) || (time <= -1E14)) {
+                        time = Math.floor(time / 1000)
+                    }
+                    else if ((time >= 1E11) || (time <= -3E10)) {
+                        // eslint-disable-next-line no-empty
+                    }
+                    else {
+                        if ((time > 1E11) || (time < -1E10)) {
+                            // eslint-disable-next-line no-empty
+                        }
+                        time = time * 1000
+                    }
+                    return moment(Number.parseInt(time, 10))
                 default:
                     return moment(time)
             }

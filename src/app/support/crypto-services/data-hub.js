@@ -74,8 +74,12 @@ export class DataHub
         return new OrderBook(this.tickerSize)
     }
 
-    createOrderBook(orderBook) {
-        return new OrderBook(this.tickerSize, orderBook.asks, orderBook.bids)
+    createOrderBook(streamingOrderBook) {
+        return new OrderBook(this.tickerSize, streamingOrderBook.asks, streamingOrderBook.bids)
+    }
+
+    createLatestCandle(streamingCandle) {
+        return streamingCandle
     }
 
     async init() {
@@ -94,22 +98,36 @@ export class DataHub
         this.heatMaker.setLatestCandle(this.latestCandle)
     }
 
+    // eslint-disable-next-line no-unused-vars
+    shouldHandleStreamingCandle(streamingCandle) {
+        // wait till starting candles fetched
+        return this.latestCandle.candle != null
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    shouldHandleStreamingOrderBook(streamingOrderBook) {
+        return streamingOrderBook.asks.length || streamingOrderBook.bids.length
+    }
+
     async on(handleStartingCandles, handleStreamingCandle, handleStreamingOrderBook) {
         const orderBook = this.initializeStartingOrderBook();
 
         (await this.streamHub.connect()).listen(
-            updatingCandle => {
-                if (this.latestCandle.candle != null) { // starting candles fetched
-                    this.updateLatestCandle(updatingCandle)
-                    handleStreamingCandle(updatingCandle)
+            streamingCandle => {
+                if (this.shouldHandleStreamingCandle(streamingCandle)) {
+                    const latestCandle = this.createLatestCandle(streamingCandle)
+                    this.updateLatestCandle(latestCandle)
+                    handleStreamingCandle(latestCandle)
                 }
             },
-            updatingOrderBook => {
-                handleStreamingOrderBook(
-                    this.heatMaker.makeHeatBook(
-                        orderBook.update(this.createOrderBook(updatingOrderBook)),
-                    ),
-                )
+            streamingOrderBook => {
+                if (this.shouldHandleStreamingOrderBook(streamingOrderBook)) {
+                    handleStreamingOrderBook(
+                        this.heatMaker.makeHeatBook(
+                            orderBook.update(this.createOrderBook(streamingOrderBook)),
+                        ),
+                    )
+                }
             },
         )
 

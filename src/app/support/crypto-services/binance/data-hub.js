@@ -27,7 +27,7 @@ export class DataHub extends BaseDataHub
         return new OrderBook(this.tickerSize)
     }
 
-    createOrderBook(orderBook) {
-        return new OrderBook(this.tickerSize, orderBook.asks, orderBook.bids, orderBook.lastUpdateId)
+    createOrderBook(streamingOrderBook) {
+        return new OrderBook(this.tickerSize, streamingOrderBook.asks, streamingOrderBook.bids, streamingOrderBook.lastUpdateId)
     }
 }
