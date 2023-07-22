@@ -12,14 +12,14 @@ export class DataHubFactory
      * @param {String} interval
      * @returns {Promise<DataHub|null>}
      */
-    static async create(exchange = 'binance', baseSymbol = 'BTC', quoteSymbol = 'USDT', interval = '1d') {
+    static async create(exchange = 'BINANCE', baseSymbol = 'BTC', quoteSymbol = 'USDT', interval = '1d') {
         const hub = (() => {
             switch (exchange) {
-                case 'okx':
+                case 'OKX':
                     return new OkxDataHub(baseSymbol, quoteSymbol, interval)
-                case 'coinbase':
+                case 'COINBASE':
                     return new CoinbaseDataHub(baseSymbol, quoteSymbol, interval)
-                case 'binance':
+                case 'BINANCE':
                     return new BinanceDataHub(baseSymbol, quoteSymbol, interval)
                 default:
                     throw `Exchange ${exchange} not supported`

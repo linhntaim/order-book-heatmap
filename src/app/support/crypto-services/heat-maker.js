@@ -36,10 +36,11 @@ export class HeatMaker
 
     setTickerSize(tickerSize) {
         this.tickerSize = tickerSize
+        this.tickerSizePrecision = num.precision(this.tickerSize)
         this.usdFormatter = new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
-            maximumFractionDigits: num.precision(this.tickerSize),
+            maximumFractionDigits: this.tickerSizePrecision,
         })
         return this
     }
@@ -70,7 +71,7 @@ export class HeatMaker
     }
 
     calcHeatPrice(price, side = 'bids') {
-        return (Math[side === 'bids' ? 'floor' : 'ceil'](price / this.latestCandle.heatSize) * this.latestCandle.heatSize).toFixed(num.precision(this.tickerSize))
+        return (Math[side === 'bids' ? 'floor' : 'ceil'](price / this.latestCandle.heatSize) * this.latestCandle.heatSize).toFixed(this.tickerSizePrecision)
     }
 
     aggregateOrdersByHeat(orders, side = 'bids') {
@@ -93,6 +94,7 @@ export class HeatMaker
         const heatSideCollection = {}
         Object.keys(heatOrders).forEach(heatPrice => {
             const heatTotal = heatOrders[heatPrice].total
+            const heatQuantity = heatOrders[heatPrice].quantity
             if (heatTotal < 300000) {
                 return
             }
@@ -100,11 +102,12 @@ export class HeatMaker
                 heatSideCollection[heatPrice] = {
                     candles: [],
                     markers: [],
+                    data: [],
                 }
             }
             const color = this.calcColor(heatTotal, side)
             const open = Number(heatPrice)
-            const close = Number((Number(heatPrice) + this.latestCandle.heatSize).toFixed(num.precision(this.tickerSize)))
+            const close = open + this.latestCandle.heatSize
             heatSideCollection[heatPrice].candles.push({
                 time: this.latestCandle.nextIntervalTime,
                 open: open,
@@ -115,11 +118,22 @@ export class HeatMaker
                 borderColor: color,
                 wickColor: color,
             })
+            const heatTotalText = this.usdFormatter.format(heatTotal)
+            const heatQuantityText = heatQuantity.toFixed(this.tickerSizePrecision)
             heatSideCollection[heatPrice].markers.push({
                 time: this.latestCandle.nextIntervalTime,
                 position: 'inBar',
                 color: 'rgba(255, 255, 255, 0.85)',
-                text: this.usdFormatter.format(heatTotal) + ' ' + `(${heatOrders[heatPrice].quantity.toFixed(2)})`,
+                text: `${heatTotalText} (${heatQuantityText})`,
+            })
+            heatSideCollection[heatPrice].data.push({
+                price: open,
+                priceText: heatPrice,
+                color: color,
+                total: heatTotal,
+                quantity: heatQuantity,
+                totalText: heatTotalText,
+                quantityText: heatQuantityText,
             })
         })
         return heatSideCollection
