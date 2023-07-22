@@ -411,7 +411,7 @@ export default {
     display: inline-block;
     cursor: default;
     pointer-events: auto;
-    background: rgba(19, 23, 34, .7);
+    background: rgba(19, 23, 34, .75);
 }
 
 .legend-primary {
