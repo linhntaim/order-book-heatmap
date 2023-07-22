@@ -40,7 +40,7 @@ export class HeatMaker
         this.usdFormatter = new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
-            maximumFractionDigits: num.precision(this.tickerSize),
+            maximumFractionDigits: this.tickerSizePrecision,
         })
         return this
     }
@@ -71,7 +71,7 @@ export class HeatMaker
     }
 
     calcHeatPrice(price, side = 'bids') {
-        return (Math[side === 'bids' ? 'floor' : 'ceil'](price / this.latestCandle.heatSize) * this.latestCandle.heatSize).toFixed(num.precision(this.tickerSize))
+        return (Math[side === 'bids' ? 'floor' : 'ceil'](price / this.latestCandle.heatSize) * this.latestCandle.heatSize).toFixed(this.tickerSizePrecision)
     }
 
     aggregateOrdersByHeat(orders, side = 'bids') {
