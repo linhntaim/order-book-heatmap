@@ -110,8 +110,11 @@ export class DataHub
     }
 
     async on(handleStartingCandles, handleStreamingCandle, handleStreamingOrderBook) {
-        const orderBook = this.initializeStartingOrderBook();
+        const startingCandles = await this.getStartingCandles()
+        this.updateLatestCandle(startingCandles[startingCandles.length - 1])
+        handleStartingCandles(startingCandles)
 
+        const orderBook = this.initializeStartingOrderBook();
         (await this.streamHub.connect()).listen(
             streamingCandle => {
                 if (this.shouldHandleStreamingCandle(streamingCandle)) {
@@ -130,10 +133,6 @@ export class DataHub
                 }
             },
         )
-
-        const startingCandles = await this.getStartingCandles()
-        this.updateLatestCandle(startingCandles[startingCandles.length - 1])
-        handleStartingCandles(startingCandles)
 
         orderBook.replace(this.createOrderBook(await this.getStartingOrderBook()))
     }
