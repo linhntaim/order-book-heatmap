@@ -40,8 +40,8 @@ export class StreamHub
     listen(onCandle, onOrderBook) {
         this.subscribe()
 
-        this.stream.onmessage = event => {
-            const data = JSON.parse(event.data)
+        this.stream.onmessage = async event => {
+            const data = await this.parseData(event.data)
             switch (true) {
                 case this.isCandle(data):
                     onCandle(this.transformCandle(data))
@@ -51,6 +51,10 @@ export class StreamHub
                     break
             }
         }
+    }
+
+    async parseData(data) {
+        return JSON.parse(data)
     }
 
     subscribe() {
@@ -91,7 +95,9 @@ export class StreamHub
     }
 
     disconnect() {
-        this.stream.close()
-        this.stream = null
+        if (this.stream) {
+            this.stream.close()
+            this.stream = null
+        }
     }
 }

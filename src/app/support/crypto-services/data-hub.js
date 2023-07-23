@@ -109,10 +109,16 @@ export class DataHub
         return streamingOrderBook.asks.length || streamingOrderBook.bids.length
     }
 
+    beforeOn() {
+
+    }
+
     async on(handleStartingCandles, handleStreamingCandle, handleStreamingOrderBook) {
         const startingCandles = await this.getStartingCandles()
         this.updateLatestCandle(startingCandles[startingCandles.length - 1])
         handleStartingCandles(startingCandles)
+
+        this.beforeOn()
 
         const orderBook = this.initializeStartingOrderBook();
         (await this.streamHub.connect()).listen(
