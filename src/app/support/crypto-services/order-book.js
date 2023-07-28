@@ -1,10 +1,8 @@
-import {num} from '@/app/support/helpers'
-
 export class OrderBook
 {
     /**
      *
-     * @param {Number} tickerSize
+     * @param {Object} tickerSize
      * @param {Array} asks
      * @param {Array} bids
      */
@@ -32,7 +30,7 @@ export class OrderBook
     aggregateByPrice(orders) {
         const aggregatedOrders = {} // price => quantity
         orders.forEach(order => {
-            const price = Number(order[0]).toFixed(num.precision(this.tickerSize))
+            const price = Number(order[0]).toFixed(this.tickerSize.precision)
             const quantity = Number(order[1])
             if (!(order[0] in aggregatedOrders)) {
                 aggregatedOrders[price] = 0

@@ -31,9 +31,9 @@ export class ApiHub extends BaseApiHub
         return this.request('GET', `products/${this.ticker}/book`, {
             level: 2,
         }).then(data => ({
+            type: 'snapshot',
             asks: data.asks,
             bids: data.bids,
-            lastUpdateId: data.sequence,
         }))
     }
 }

@@ -4,6 +4,7 @@ import {OrderBook} from './order-book'
 import {StreamHub} from './stream-hub'
 import {Ticker} from './ticker'
 import {HeatMaker} from '@/app/support/crypto-services/heat-maker'
+import {num} from '@/app/support/helpers'
 
 export class DataHub
 {
@@ -13,7 +14,11 @@ export class DataHub
          * @type {Ticker}
          */
         this.ticker = this.createTicker(baseSymbol, quoteSymbol)
-        this.tickerSize = 0.01
+        this.tickerSize = {
+            value: 0.01,
+            precision: 2,
+        }
+        this.tickerSizePrecision = 2
 
         /**
          *
@@ -84,7 +89,8 @@ export class DataHub
 
     async init() {
         const info = await this.getStartingInfo()
-        this.tickerSize = info.ticker.size
+        this.tickerSize.value = info.ticker.size
+        this.tickerSize.precision = num.precision(this.tickerSize.value)
 
         this.heatMaker.setTickerSize(this.tickerSize)
     }
@@ -93,7 +99,7 @@ export class DataHub
         this.latestCandle.candle = latestCandle
         this.latestCandle.nextIntervalTime = this.interval.findOpenTimeOf(null, 1)
         this.latestCandle.heatSize =
-            (heatSize => (heatSize <= 1000 ? 10 : heatSize / 100) * this.tickerSize)(Math.pow(10, Math.floor(Math.log10(latestCandle.close / this.tickerSize))))
+            (heatSize => (heatSize <= 1000 ? 10 : heatSize / 100) * this.tickerSize.value)(Math.pow(10, Math.floor(Math.log10(latestCandle.close / this.tickerSize.value))))
 
         this.heatMaker.setLatestCandle(this.latestCandle)
     }

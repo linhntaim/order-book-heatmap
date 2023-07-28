@@ -28,12 +28,6 @@ export class DataHub extends BaseDataHub
     }
 
     createOrderBook(streamingOrderBook) {
-        return new OrderBook(this.tickerSize, streamingOrderBook.asks, streamingOrderBook.bids, streamingOrderBook.lastUpdateId)
-    }
-
-    beforeOn() {
-        const depth = (d => d === 4 ? 5 : d)(Math.log10(this.latestCandle.heatSize / this.tickerSize.value))
-        this.apiHub.setDepth(depth)
-        this.streamHub.setDepth(depth)
+        return new OrderBook(this.tickerSize, streamingOrderBook.asks, streamingOrderBook.bids, streamingOrderBook.type, streamingOrderBook.lastUpdateId)
     }
 }

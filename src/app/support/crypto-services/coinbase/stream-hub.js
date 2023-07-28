@@ -18,6 +18,12 @@ export class StreamHub extends BaseStreamHub
         return 'wss://ws-feed.exchange.coinbase.com'
     }
 
+    resetQueue() {
+        this.queueOrderBook.counter = 0
+        this.queueOrderBook.asks = []
+        this.queueOrderBook.bids = []
+    }
+
     subscriptionRequest() {
         return {
             'type': 'subscribe',
@@ -48,6 +54,7 @@ export class StreamHub extends BaseStreamHub
 
     transformOrderBook(data) {
         if (data.type === 'snapshot') {
+            this.resetQueue()
             return {
                 type: data.type,
                 asks: data.asks,
@@ -75,16 +82,15 @@ export class StreamHub extends BaseStreamHub
         this.queueOrderBook.asks.push(chunk.asks)
         this.queueOrderBook.bids.push(chunk.bids)
         // return all chunks in queue after 1s
-        if (++this.queueOrderBook.counter === 20) { // 20 * 0.05s
-            return take({
-                type: data.type,
-                asks: this.queueOrderBook.asks,
-                bids: this.queueOrderBook.bids,
-            }, () => {
-                this.queueOrderBook.counter = 0
-                this.queueOrderBook.asks = []
-                this.queueOrderBook.bids = []
-            })
+        if (++this.queueOrderBook.counter === 60) { // 10 * 0.05s
+            return take(
+                {
+                    type: data.type,
+                    asks: this.queueOrderBook.asks,
+                    bids: this.queueOrderBook.bids,
+                },
+                () => this.resetQueue(),
+            )
         }
         return {
             type: data.type,

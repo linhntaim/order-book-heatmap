@@ -45,6 +45,16 @@
                     span.legend-group-item {{ largest.bids.totalText }}
                     span.legend-group-item {{ largest.bids.quantityText }}
                     span.legend-group-item {{ largest.bids.priceText }}
+        .legend(v-if="heat.colors.length")
+            span.legend-inner
+                span.legend-primary Current heat
+                span.legend-secondary.d-flex
+                    .heat-color-space
+                        .heat-color(v-for="color in heat.colors" :style="{background: color}")
+                    .heat-pointer-space
+                        .heat-pointer.d-flex(:style="{color: heat.color, 'margin-top': heat.index >= 0 ? `${(10 * heat.index).toString()}px` : '-5px'}")
+                            .heat-pointer-arrow.px-1 &larr;
+                            .heat-pointer-text.text-center(v-html="heat.text")
     .chart-container.vw-100.vh-100(ref="chartContainer")
 #reloadModal.modal.fade(tabindex="-1" data-bs-backdrop="static")
     .modal-dialog
@@ -58,7 +68,6 @@
 
 <script>
 import {createChart, CrosshairMode} from 'lightweight-charts'
-import {num} from '@/app/support/helpers'
 import {DataHubFactory} from '@/app/support/crypto-services/data-hub-factory'
 import formfactor from 'platform-detect/formfactor.mjs'
 
@@ -113,7 +122,14 @@ export default {
                     quantityText: '0',
                 },
             },
+            heat: {
+                colors: [],
+                color: '#ffffff',
+                text: 'N/A',
+                index: -1,
+            },
 
+            crosshairMoving: false,
             crosshairMovingInTime: false,
         }
     },
@@ -161,6 +177,7 @@ export default {
         },
         async createDataHub() {
             dataHub = await DataHubFactory.create(this.exchange, this.baseSymbol, this.quoteSymbol, this.interval)
+            this.heat.colors = dataHub.heatMaker.colors.bids
         },
         removeDataHub() {
             if (dataHub) {
@@ -198,9 +215,24 @@ export default {
                     rightOffset: 20,
                 },
             })
-            chart.subscribeCrosshairMove(this.listenToCrosshairMove)
+        },
+        removeChart() {
+            if (chart) {
+                chart.unsubscribeCrosshairMove(this.listenToCrosshairMove)
+                chart.remove()
+                chart = null
+            }
         },
         listenToCrosshairMove(param) {
+            if (param.point) {
+                this.crosshairMoving = true
+                this.updateHeatOnLegend(priceSeries.coordinateToPrice(param.point.y))
+            }
+            else {
+                this.crosshairMoving = false
+                this.updateCurrentHeatOnLegend()
+            }
+
             if (param.time && param.time <= dataHub.latestCandle.candle.time) {
                 this.crosshairMovingInTime = true
                 this.updateCandleOnLegend(param.seriesData.get(priceSeries))
@@ -210,20 +242,12 @@ export default {
                 this.updateLatestCandleToLegend()
             }
         },
-        removeChart() {
-            if (chart) {
-                chart.unsubscribeCrosshairMove(this.listenToCrosshairMove)
-                chart.remove()
-                chart = null
-            }
-        },
         updateCandleOnLegend(candle) {
             if (candle) {
-                const precision = num.precision(dataHub.tickerSize)
-                this.open = candle.open.toFixed(precision)
-                this.high = candle.high.toFixed(precision)
-                this.low = candle.low.toFixed(precision)
-                this.close = candle.close.toFixed(precision)
+                this.open = candle.open.toFixed(dataHub.tickerSize.precision)
+                this.high = candle.high.toFixed(dataHub.tickerSize.precision)
+                this.low = candle.low.toFixed(dataHub.tickerSize.precision)
+                this.close = candle.close.toFixed(dataHub.tickerSize.precision)
                 this.color = candle.close >= candle.open ? '#26a69a' : '#ef5350'
                 return true
             }
@@ -235,10 +259,28 @@ export default {
             }
             return false
         },
+        updateHeatOnLegend(price, currentFallback = true) {
+            const side = price > dataHub.heatMaker.calcHeatPrice(dataHub.latestCandle.candle.close, 'asks') ? 'asks' : 'bids'
+            this.heat.colors = dataHub.heatMaker.colors[side]
+
+            const heatPrice = dataHub.heatMaker.calcHeatPrice(price)
+            if (heatPrice in heatBookSeries[side] && heatBookSeries[side][heatPrice].data) {
+                const heatData = heatBookSeries[side][heatPrice].data[0]
+                this.heat.index = dataHub.heatMaker.calcColorIndex(heatData.total)
+                this.heat.color = this.heat.colors[this.heat.index < 3 ? 3 : this.heat.index]
+                this.heat.text = `${heatData.totalText}<br>(${heatData.quantityText})`
+            }
+            else {
+                currentFallback && this.updateCurrentHeatOnLegend()
+            }
+        },
+        updateCurrentHeatOnLegend() {
+            this.updateHeatOnLegend(dataHub.latestCandle.candle.close, false)
+        },
         createSeries() {
             const numFormatter = new Intl.NumberFormat('en-US', {
-                maximumFractionDigits: num.precision(dataHub.tickerSize),
-                minimumFractionDigits: num.precision(dataHub.tickerSize),
+                maximumFractionDigits: dataHub.tickerSize.precision,
+                minimumFractionDigits: dataHub.tickerSize.precision,
             })
             const updateTitle = () => {
                 this.head.title = `${numFormatter.format(dataHub.latestCandle.candle.close)} ${this.baseSymbol}/${this.quoteSymbol}`
@@ -250,8 +292,8 @@ export default {
 
                     priceSeries = chart.addCandlestickSeries({
                         priceFormat: {
-                            precision: num.precision(dataHub.tickerSize),
-                            minMove: dataHub.tickerSize,
+                            precision: dataHub.tickerSize.precision,
+                            minMove: dataHub.tickerSize.value,
                         },
                     })
                     priceSeries.setData(startingCandles)
@@ -260,6 +302,7 @@ export default {
                             autoScale: false,
                         },
                     })
+                    chart.subscribeCrosshairMove(this.listenToCrosshairMove)
                 },
                 updatingCandle => {
                     updateTitle()
@@ -270,6 +313,9 @@ export default {
                 heatBook => {
                     this.createHeatSideSeries(heatBook.asks, 'asks')
                     this.createHeatSideSeries(heatBook.bids, 'bids')
+                    if (!this.crosshairMoving) {
+                        this.updateCurrentHeatOnLegend()
+                    }
                 },
             )
         },
@@ -325,16 +371,20 @@ export default {
                             lastValueVisible: false,
                         })
                         heatSeries.setData(heatSideItem.candles)
-                        heatSeries.setMarkers(heatSideItem.markers)
-                        heatBookSeries[side][heatPrice] = heatSeries
+                        // heatSeries.setMarkers(heatSideItem.markers)
+                        heatBookSeries[side][heatPrice] = {
+                            series: heatSeries,
+                            data: heatSideItem.data,
+                        }
                     }
                     else { // found - update
-                        const heatSeries = heatBookSeries[side][heatPrice]
+                        const heatSeries = heatBookSeries[side][heatPrice].series
                         heatSeries.setData(heatSideItem.candles)
-                        heatSeries.setMarkers(heatSideItem.markers)
+                        // heatSeries.setMarkers(heatSideItem.markers)
                         heatSeries.applyOptions({
                             visible: true,
                         })
+                        heatBookSeries[side][heatPrice].data = heatSideItem.data
 
                         oldHeatPrices.splice(found, 1)
                     }
@@ -351,14 +401,15 @@ export default {
 
             // hide old which not updated
             oldHeatPrices.forEach(heatPrice => {
-                heatBookSeries[side][heatPrice].applyOptions({
+                heatBookSeries[side][heatPrice].series.applyOptions({
                     visible: false,
                 })
+                heatBookSeries[side][heatPrice].data = null
             })
         },
         removeHeatSideSeries(heatSideSeries) {
             Object.keys(heatSideSeries).forEach(heatPrice => {
-                chart.removeSeries(heatSideSeries[heatPrice])
+                chart.removeSeries(heatSideSeries[heatPrice].series)
                 delete heatBookSeries[heatPrice]
             })
         },
@@ -436,6 +487,17 @@ export default {
     &:not(:first-child) {
         margin-left: .3rem;
     }
+}
+
+.heat-color-space {
+    display: flex;
+    flex-direction: column;
+    padding: 5px 0;
+}
+
+.heat-color {
+    width: 5px;
+    height: 10px;
 }
 
 @media (max-width: 767px) {
