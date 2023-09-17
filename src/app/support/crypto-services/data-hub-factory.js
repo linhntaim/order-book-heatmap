@@ -3,6 +3,7 @@ import {DataHub as CoinbaseDataHub} from '@/app/support/crypto-services/coinbase
 import {DataHub as OkxDataHub} from '@/app/support/crypto-services/okx/data-hub'
 import {DataHub as HuobiDataHub} from '@/app/support/crypto-services/huobi/data-hub'
 import {DataHub as BybitDataHub} from '@/app/support/crypto-services/bybit/data-hub'
+// import {DataHub as GateDataHub} from '@/app/support/crypto-services/gate/data-hub'
 
 export class DataHubFactory
 {
@@ -17,6 +18,8 @@ export class DataHubFactory
     static async create(exchange = 'BINANCE', baseSymbol = 'BTC', quoteSymbol = 'USDT', interval = '1d') {
         const hub = (() => {
             switch (exchange) {
+                // case 'GATE':
+                //     return new GateDataHub(baseSymbol, quoteSymbol, interval)
                 case 'BYBIT':
                     return new BybitDataHub(baseSymbol, quoteSymbol, interval)
                 case 'HUOBI':

@@ -19,6 +19,6 @@ export class UrlGenerator extends Maker
     }
 
     route(location) {
-        return this.concat(this.router.resolve(location).path.substr(1))
+        return this.concat(this.router.resolve(location).path.slice(1))
     }
 }

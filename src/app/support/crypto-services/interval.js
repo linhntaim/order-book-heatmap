@@ -1,11 +1,10 @@
-import {substr} from 'locutus/php/strings'
 import moment from 'moment'
 
 export class Interval
 {
     constructor(interval) {
         this.interval = interval
-        this.unit = substr(this.interval, -1)
+        this.unit = this.interval.slice(-1)
         this.number = Number.parseInt(this.interval)
         const maps = this.maps()
         if (!(this.interval in maps)) {
